@@ -19,12 +19,10 @@ if useredis:
 
 
 class ModeSelect(QtCore.QObject):
-
     # signal when mode is selected
     modeSelected = QtCore.Signal(str, name='modeSelected')
     # stop ventilation signal
     stopVent = QtCore.Signal(name='stopVent')
-    # live data
     liveData = QtCore.Signal('QVariant', name='liveData')
 
     def __init__(self, parent=None):
@@ -34,7 +32,7 @@ class ModeSelect(QtCore.QObject):
         self._currTrigger = ""
         self._status = ""
         self._threader = None
-        self._delay = 1
+        self._delay = 1.5
         self._goOn = True
         self._pip = {"name": "PIP", "value": 3}
 
@@ -106,6 +104,7 @@ class ModeSelect(QtCore.QObject):
     @QtCore.Slot()
     def startVentilation(self):
         self.status = "start"
+        self.modeSelected.emit(self._currMode)
         logging.warning("Starting Ventilation")
         if useredis:
             r.mset({"status": self._status})
@@ -131,14 +130,6 @@ class ModeSelect(QtCore.QObject):
             r.mset({"PARAMS": paramsdump})
 
         logging.debug(f'Input {mystring} set: {myint}')
-        self.modeSelected.emit(self._currMode)
-
-    def stop(self):
-        self._goOn = False
-        # checks threader, if still alive, stays inside till dead
-        if self._threader is not None:
-            while self._threader.isRunning():
-                time.sleep(0.1)
 
     def start(self):
         self._threader = Threader(self.core, self)
@@ -149,8 +140,16 @@ class ModeSelect(QtCore.QObject):
             while self._goOn:
                 # sends signal and then waits for delay
                 data = {
-                    "pressure": config.r.get("pressure"),
-                    "volume": float(config.r.get("volume"))*1000
+                    "ppeak": 19,
+                    "pmean": 11,
+                    "expminvol": 7.5,
+                    "vte": 500,
+                    "rate": 20,
+                    "r1": 20,
+                    "r2": 60,
+                    "r3": 5,
+                    "r4": 60,
+
                 }
                 self.liveData.emit(data)
                 print("on thread")

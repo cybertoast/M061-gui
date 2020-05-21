@@ -1,9 +1,10 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.0
+import QtMultimedia 5.10
 import "./config.js"
 as Config
-
+import "./assets"
 Item {
     id: root
     height: 800
@@ -20,7 +21,7 @@ Item {
             anchors.rightMargin: 0
             anchors.leftMargin: 0
             anchors.fill: parent
-            contentHeight: root.height + column.height - 380
+            // contentHeight: root.height + column.height - 380
 
             Column {
                 id: column
@@ -29,7 +30,7 @@ Item {
 
                 Text {
                     id: title
-                    height: 100
+                    height: 80
                     text: root.triggerType === "Time" ? "Pressure Control" : "Pressure Assist"
                     anchors.horizontalCenter: parent.horizontalCenter
                     horizontalAlignment: Text.AlignLeft
@@ -50,7 +51,7 @@ Item {
                     name: UserInput.PEEP.name
                     stepSize: UserInput.PEEP.stepSize
                     anchors.horizontalCenter: parent.horizontalCenter
-                    initialVal: Params.PEEP !== null ? Params.PEEP : UserInput.PEEP.initialVal
+                    initialVal: Params.PEEP ? Params.PEEP : UserInput.PEEP.initialVal
                     minVal: UserInput.PEEP.minVal
                     maxVal: UserInput.PEEP.maxVal
                 }
@@ -96,8 +97,9 @@ Item {
                 }
                 BaseRadioGroup {
                     id: er
+                    name: ""
                     width: 500
-                    height: 100
+                    height: 60
                     anchors.horizontalCenterOffset: 20
                     anchors.horizontalCenter: parent.horizontalCenter
 
@@ -135,6 +137,11 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
 
+                Audio {
+                    id: playMusic
+                    source: "./assets/done.mp3"
+                }
+
                 Rectangle {
                     id: buttonSubmit
                     width: 110
@@ -156,6 +163,7 @@ Item {
                             ModeSelect.sendInt("PEEP", peep.value)
                             ModeSelect.sendInt("ER", er.value)
                             ModeSelect.startVentilation()
+                            playMusic.play()
                         }
                     }
 

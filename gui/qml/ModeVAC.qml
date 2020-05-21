@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.0
+import QtMultimedia 5.10
 import "./config.js"
 as Config
 
@@ -20,7 +21,7 @@ Item {
             anchors.rightMargin: 0
             anchors.leftMargin: 0
             anchors.fill: parent
-            contentHeight: root.height + column.height - 380
+            // contentHeight: root.height + column.height - 380
 
             Column {
                 id: column
@@ -29,7 +30,7 @@ Item {
 
                 Text {
                     id: title
-                    height: 100
+                    height: 80
                     text: root.triggerType === "Time" ? "Volume Control" : "Volume Assist"
                     anchors.horizontalCenter: parent.horizontalCenter
                     horizontalAlignment: Text.AlignLeft
@@ -97,7 +98,8 @@ Item {
                 BaseRadioGroup {
                     id: er
                     width: 500
-                    height: 100
+                    height: 60
+                    name: ""
                     anchors.horizontalCenterOffset: 20
                     anchors.horizontalCenter: parent.horizontalCenter
 
@@ -134,21 +136,25 @@ Item {
                     maxVal: 20
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
+                Audio {
+                    id: playMusic
+                    source: "./assets/done.mp3"
+                }
 
                 Rectangle {
                     id: buttonSubmit
                     width: 110
                     height: 38
-                    color: Config.color_dark
+                    color: Config.color_primary
                     anchors.horizontalCenter: parent.horizontalCenter
                     MouseArea {
                         anchors.fill: parent
                         onReleased: {
-                            ModeSelect.sendString("TidalVolume", vt.value)
+                            ModeSelect.sendInt("TidalVolume", vt.value)
                             ModeSelect.sendString("Mode", "Volume A/C")
                             ModeSelect.mode = "Volume A/C"
-                            ModeSelect.sendString("BreathType", root.triggerType === "Time" ? "Pressure Control" : "Pressure Assist")
-                            ModeSelect.breath = root.triggerType === "Time" ? "Pressure Control" : "Pressure Assist"
+                            ModeSelect.sendString("BreathType", root.triggerType === "Time" ? "Volume Control" : "Volume Assist")
+                            ModeSelect.breath = root.triggerType === "Time" ? "Volume Control" : "Volume Assist"
                             ModeSelect.sendString("PatientTriggerType", root.triggerType === "Flow" ? "Flow Trigger" : "Pressure Trigger")
                             ModeSelect.trigger = root.triggerType
                             ModeSelect.sendInt("FiO2", fio2.value)
@@ -156,6 +162,7 @@ Item {
                             ModeSelect.sendInt("PEEP", peep.value)
                             ModeSelect.sendInt("ER", er.value)
                             ModeSelect.startVentilation()
+                            playMusic.play()
                         }
                     }
 

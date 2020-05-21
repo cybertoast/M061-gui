@@ -10,22 +10,23 @@ import QtQuick.Controls 2.1
 
 Item {
     id: sidebar
-    width: Config.sidebar_height
     property int currentView: 0
-    signal liveData(var data)
-    signal openMonitor()
-    signal openTab()
-
-    // patient information when first started
+    signal startVentilation()
+    signal stopVentilation()
+    // monitor when first started
     Component.onCompleted: {
-        currentView = 2
-        menulist.model.get(0).class_name = "dark"
+        currentView = 0
+        menulist.model.get(0).class_name = "light"
         menulist.model.get(1).class_name = "dark"
-        menulist.model.get(2).class_name = "light"
+        menulist.model.get(2).class_name = "dark"
         menulist.model.get(3).class_name = "dark"
         ModeSelect.modeSelected.connect(sidebar.openMonitor)
-        ModeSelect.liveData.connect(sidebar.liveData)
+        ModeSelect.modeSelected.connect(sidebar.startVentilation)
+        ModeSelect.stopVent.connect(sidebar.stopVentilation)
     }
+    onStartVentilation: ModeSelect.mode === "Pressure A/C" ? modeText.text = "PAC" : modeText.text = "VAC"
+    onStopVentilation: modeText.text = "---"
+    signal openTab()
     onOpenTab: {
         currentView = 1
         menulist.model.get(0).class_name = "dark"
@@ -33,6 +34,9 @@ Item {
         menulist.model.get(2).class_name = "dark"
         menulist.model.get(3).class_name = "dark"
     }
+    signal openMonitor()
+    width: 300
+    height: 800
     onOpenMonitor: {
         currentView = 0
         menulist.model.get(0).class_name = "light"
@@ -40,15 +44,11 @@ Item {
         menulist.model.get(2).class_name = "dark"
         menulist.model.get(3).class_name = "dark"
     }
-    onLiveData: {
-        liveData.pip = data.pressure
-        liveData.vt = data.volume
-    }
 
     Rectangle {
         id: sidebarrectangle
         width: Config.sidebar_width
-        color: Config.bg_color
+        color: "#040000"
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.top: parent.top
@@ -131,163 +131,124 @@ Item {
         }
 
 
-        SwipeView {
+        Item {
             id: view
-            anchors.bottom: iconrow.top
+            anchors.bottomMargin: 10
+            anchors.bottom: rectangle.top
+            anchors.topMargin: 0
             anchors.top: menulistcolumn.bottom
             anchors.right: parent.right
             anchors.left: parent.left
+            signal liveData(var data)
+            Component.onCompleted: ModeSelect.liveData.connect(view.liveData)
+            onLiveData: {
+                ppeak.value = data.ppeak
+                pmean.value = data.pmean
+                expminvol.value = data.expminvol
+                vte.value = data.vte
+                rate.value = data.rate
 
-            currentIndex: 0
-            Component.onCompleted: {
-                baranimation.start()
-                baranimation2.stop()
             }
 
-            onCurrentIndexChanged: {
-                if (currentIndex === 0) {
-                    baranimation.start()
-                    baranimation2.stop()
-                } else {
-                    baranimation2.start()
-                    baranimation.stop()
+
+            Column {
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 0
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.left: parent.left
+                spacing: 6
+
+                SidebarData {
+                    id: ppeak
+                    min: 5
+                    max: 40
+                    units: "cmH2O"
+                    title: "Ppeak"
+                    value: 19
+                }
+
+                SidebarData {
+                    id: pmean
+                    max: 15
+                    title: "Pmean"
+                    units: "cmH2O"
+                    value: 11
+                }
+
+                SidebarData {
+                    id: expminvol
+                    units: "l/min"
+                    title: "ExpMinVol"
+                    value: 7.5
+                }
+
+                SidebarData {
+                    id: vte
+                    max: 750
+                    min: 250
+                    title: "VTE"
+                    units: "ml"
+                    value: 500
+                }
+
+                SidebarData {
+                    id: rate
+                    max: 23
+                    min: 8
+                    title: "Rate"
+                    units: "b/min"
+                    value: 20
                 }
             }
 
 
-            Item {
-                id: firstPage
-                LiveData {
-                    id: liveData
-                    anchors.bottom: iconrow.top
-                    anchors.left: parent.left
-                    anchors.leftMargin: 0
-                    anchors.right: parent.right
-                    anchors.top: menulistcolumn.bottom
-                }
-
-
-                Rectangle {
-                    id: swiper
-                    property int bounce: 0
-                    x: view.currentIndex === 0 ? 140 : 155
-                    y: 70
-                    width: 3
-                    height: 150
-                    color: "#ffffff"
-                    radius: 1.5
-                    border.width: 0
-
-                    SequentialAnimation on x {
-                        id: baranimation
-                        loops: Animation.Infinite
-                        PauseAnimation {
-                            duration: 2000
-                        }
-
-                        // Move from minHeight to maxHeight in 300ms, using the OutExpo easing function
-                        NumberAnimation {
-                            from: 140
-                            to: 135
-                            easing.type: Easing.OutExpo;duration: 500
-                        }
-
-
-                        // Then move back to minHeight in 1 second, using the OutBounce easing function
-                        NumberAnimation {
-                            from: 135
-                            to: 140
-                            easing.type: Easing.OutBounce;duration: 1000
-                        }
-
-                        // Then pause for 500ms
-                        PauseAnimation {
-                            duration: 10000
-                        }
-                    }
-
-                    SequentialAnimation on x {
-                        id: baranimation2
-                        loops: Animation.Infinite
-                        PauseAnimation {
-                            duration: 10000
-                        }
-                        NumberAnimation {
-                            from: 155
-                            to: 160
-                            easing.type: Easing.OutExpo;duration: 500
-                        }
-
-                        // Then move back to minHeight in 1 second, using the OutBounce easing function
-                        NumberAnimation {
-                            from: 160
-                            to: 155
-                            easing.type: Easing.OutBounce;duration: 1000
-                        }
-
-                        // Then pause for 500ms
-                        PauseAnimation {
-                            duration: 10000
-                        }
-                    }
-                }
-
-
-
-
-            }
-            Item {
-                id: secondPage
-                visible: view.currentIndex === 1 ? true : false
-                LiveSetData {
-                    id: liveSetData
-                    anchors.bottom: iconrow.top
-                    anchors.left: parent.left
-                    anchors.leftMargin: 0
-                    anchors.right: parent.right
-                    anchors.top: menulistcolumn.bottom
-                }
-            }
         }
 
 
-        RowLayout {
-            id: iconrow
-            y: 438
+        Rectangle {
+            id: rectangle
+            height: 45
+            color: Config.col_dark_grey
+            anchors.bottomMargin: 5
+            anchors.bottom: sideBarIcons.top
+            anchors.left: parent.left
+            anchors.leftMargin: 0
+            anchors.right: parent.right
+            anchors.rightMargin: 0
+
+            Text {
+                id: modeText
+                height: 50
+                color: "white"
+                text: "---"
+                font.bold: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                anchors.fill: parent
+                font.pixelSize: 30
+            }
+        }
+
+        SideBarIcons {
+            id: sideBarIcons
+            y: 778
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 20
-            anchors.leftMargin: 15
+            anchors.bottomMargin: 5
             anchors.right: parent.right
             anchors.left: parent.left
-
-            Text {
-                id: element17
-                color: "#ffffff"
-                text: "\uf015"
-                font.pixelSize: 12
-                font.family: webFont.name
-            }
-
-            Text {
-                id: element18
-                color: "#ffffff"
-                text: "\uf06a"
-                font.pixelSize: 12
-            }
-
-            Text {
-                id: element19
-                color: "#ffffff"
-                text: "\uf043"
-                font.pixelSize: 12
-            }
+            anchors.horizontalCenter: parent.horizontalCenter
         }
+
     }
 
 }
 
+
+
 /*##^##
 Designer {
-    D{i:0;formeditorZoom:1.25}
+    D{i:0;height:800;width:200}D{i:18;anchors_y:778}D{i:17;anchors_height:200;anchors_width:200}
+D{i:19;anchors_y:778}
 }
 ##^##*/

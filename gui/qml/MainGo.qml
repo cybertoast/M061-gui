@@ -8,15 +8,17 @@ import "./material/qml/material"
 import "./config.js"
 as Config
 import "."
+import QtMultimedia 5.10
 
 Item {
     id: root
     anchors.fill: parent
     signal alarm(string status)
+    signal startVentilation()
     Component.onCompleted: {
         AlarmManager.alarmStatus.connect(root.alarm)
+        ModeSelect.modeSelected.connect(root.startVentilation)
     }
-
     onAlarm: {
         if (status !== "none") {
             alarm.visible = true
@@ -27,13 +29,20 @@ Item {
         title1.text = AlarmManager.title
         info1.text = AlarmManager.info
     }
+    onStartVentilation: {
+        stopButton.visible=true
+    }
 
+    Audio {
+        id: playMusic
+        source: "./assets/stop.mp3"
+    }
 
     Rectangle {
         id: mainview
         color: "#ffffff"
         anchors.left: sidebar.right
-        anchors.right: parent.right
+        anchors.right: sideBarRight.left
         anchors.bottom: parent.bottom
         anchors.top: parent.top
 
@@ -48,11 +57,41 @@ Item {
 
 
                 ViewMonitor {
+                    id: viewMonitor
                     anchors.fill: parent
                     onPresetClicked: {
                         sidebar.openTab()
                         viewmodeview.presetClicked(mode)
 
+                    }
+                }
+
+                Rectangle {
+                    id: stopButton
+                    width: 200
+                    height: 41
+                    color: "#ef2929"
+                    visible: false
+
+                    Text {
+                        id: element
+                        color: "#ffffff"
+                        text: qsTr("STOP")
+                        font.bold: true
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignHCenter
+                        anchors.fill: parent
+                        font.pixelSize: 28
+                    }
+
+                    MouseArea {
+                        id: mouseArea
+                        anchors.fill: parent
+                        onClicked: {
+                            stopButton.visible=false
+                            ModeSelect.stopVentilation()
+                            playMusic.play()
+                        }
                     }
                 }
             }
@@ -88,7 +127,7 @@ Item {
             height: 46
             anchors.rightMargin: 20
             anchors.right: parent.right
-            source: "assets/DFL-LOGO-B.png"
+            source: "assets/DFL-LOGO-W.jpg"
             fillMode: Image.PreserveAspectFit
         }
     }
@@ -108,6 +147,12 @@ Item {
         id: webFont;source: "./src/variables/fontawesome-webfont.ttf"
     }
 
+    SideBarRight {
+        id: sideBarRight
+        x: 1169
+        y: 0
+    }
+
     Rectangle {
         id: alarm
         x: 327
@@ -115,6 +160,8 @@ Item {
         width: 200
         height: 200
         color: "#d10000"
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
         visible: false
 
         RowLayout {
@@ -176,10 +223,13 @@ Item {
 
 
 
+
 }
 
 /*##^##
 Designer {
-    D{i:0;autoSize:true;height:480;width:640}D{i:1;anchors_width:150}D{i:14;anchors_height:400;anchors_width:200}
+    D{i:0;formeditorZoom:0.75}D{i:1;anchors_width:150}D{i:16;anchors_height:400;anchors_width:200}
+D{i:19;anchors_x:46}D{i:20;anchors_x:44}D{i:18;anchors_height:60;anchors_x:0;anchors_y:0}
+D{i:21;anchors_x:44}D{i:17;anchors_width:200;anchors_x:8}
 }
 ##^##*/
